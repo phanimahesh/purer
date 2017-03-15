@@ -23,6 +23,7 @@
 # \e[K  => clears everything after the cursor on the current line
 # \e[2K => clear everything on the current line
 
+export DFURNES_PROMPT_COMMAND_COUNT=0
 
 # turns seconds into human readable time
 # 165392 => 1d 21h 56m 32s
@@ -113,8 +114,18 @@ prompt_pure_preprompt_render() {
 	local git_color=242
 	[[ -n ${prompt_pure_git_last_dirty_check_timestamp+x} ]] && git_color=red
 
-	# construct preprompt, beginning with path
-	local preprompt="%F{54}%F{cyan}%c%f"
+	# construct preprompt
+	local preprompt=""
+
+  DFURNES_PROMPT_COMMAND_COUNT=$((DFURNES_PROMPT_COMMAND_COUNT+1))
+  FIRST_COMMAND_THRESHOLD=2
+
+  if [[ "$DFURNES_PROMPT_COMMAND_COUNT" -gt "$FIRST_COMMAND_THRESHOLD" ]]; then
+    preprompt+=$'\n'
+  fi
+  
+  # begin with path
+  preprompt+="%F{54}%F{cyan}%c%f"
 	# git info
 	preprompt+="%F{$git_color}${vcs_info_msg_0_}${prompt_pure_git_dirty}%f"
 	# git pull/push arrows
