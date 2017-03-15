@@ -80,14 +80,8 @@ prompt_pure_set_title() {
 }
 
 prompt_pure_preexec() {
-	if [[ -n $prompt_pure_git_fetch_pattern ]]; then
-		# detect when git is performing pull/fetch (including git aliases).
-		if [[ $2 =~ (git|hub)\ (.*\ )?($prompt_pure_git_fetch_pattern)(\ .*)?$ ]]; then
-			# we must flush the async jobs to cancel our git fetch in order
-			# to avoid conflicts with the user issued pull / fetch.
-			async_flush_jobs 'prompt_pure'
-		fi
-	fi
+	# attempt to detect and prevent prompt_pure_async_git_fetch from interfering with user initiated git or hub fetch
+	[[ $2 =~ (git|hub)\ .*(pull|fetch) ]] && async_flush_jobs 'prompt_pure'
 
 	prompt_pure_cmd_timestamp=$EPOCHSECONDS
 
@@ -120,7 +114,7 @@ prompt_pure_preprompt_render() {
 	[[ -n ${prompt_pure_git_last_dirty_check_timestamp+x} ]] && git_color=red
 
 	# construct preprompt, beginning with path
-	local preprompt="%F{blue}%~%f"
+	local preprompt="%F{54}%F{cyan}%c%f"
 	# git info
 	preprompt+="%F{$git_color}${vcs_info_msg_0_}${prompt_pure_git_dirty}%f"
 	# git pull/push arrows
@@ -133,57 +127,62 @@ prompt_pure_preprompt_render() {
 	# make sure prompt_pure_last_preprompt is a global array
 	typeset -g -a prompt_pure_last_preprompt
 
+	# prompt turns red if the previous command didn't exit with 0
+	preprompt+=" %(?.%F{magenta}.%F{red})%f"
+
+	PROMPT="$preprompt"
+
 	# if executing through precmd, do not perform fancy terminal editing
 	if [[ "$1" == "precmd" ]]; then
-		print -P "\n${preprompt}"
+		# print -P "\n${preprompt}"
 	else
 		# only redraw if the expanded preprompt has changed
 		[[ "${prompt_pure_last_preprompt[2]}" != "${(S%%)preprompt}" ]] || return
 
-		# calculate length of preprompt and store it locally in preprompt_length
-		integer preprompt_length lines
-		prompt_pure_string_length_to_var "${preprompt}" "preprompt_length"
+		# # calculate length of preprompt and store it locally in preprompt_length
+		# integer preprompt_length lines
+		# prompt_pure_string_length_to_var "${preprompt}" "preprompt_length"
 
-		# calculate number of preprompt lines for redraw purposes
-		(( lines = ( preprompt_length - 1 ) / COLUMNS + 1 ))
+		# # calculate number of preprompt lines for redraw purposes
+		# (( lines = ( preprompt_length - 1 ) / COLUMNS + 1 ))
 
-		# calculate previous preprompt lines to figure out how the new preprompt should behave
-		integer last_preprompt_length last_lines
-		prompt_pure_string_length_to_var "${prompt_pure_last_preprompt[1]}" "last_preprompt_length"
-		(( last_lines = ( last_preprompt_length - 1 ) / COLUMNS + 1 ))
+		# # calculate previous preprompt lines to figure out how the new preprompt should behave
+		# integer last_preprompt_length last_lines
+		# prompt_pure_string_length_to_var "${prompt_pure_last_preprompt[1]}" "last_preprompt_length"
+		# (( last_lines = ( last_preprompt_length - 1 ) / COLUMNS + 1 ))
 
-		# clr_prev_preprompt erases visual artifacts from previous preprompt
-		local clr_prev_preprompt
-		if (( last_lines > lines )); then
-			# move cursor up by last_lines, clear the line and move it down by one line
-			clr_prev_preprompt="\e[${last_lines}A\e[2K\e[1B"
-			while (( last_lines - lines > 1 )); do
-				# clear the line and move cursor down by one
-				clr_prev_preprompt+='\e[2K\e[1B'
-				(( last_lines-- ))
-			done
+		# # clr_prev_preprompt erases visual artifacts from previous preprompt
+		# local clr_prev_preprompt
+		# if (( last_lines > lines )); then
+		# 	# move cursor up by last_lines, clear the line and move it down by one line
+		# 	clr_prev_preprompt="\e[${last_lines}A\e[2K\e[1B"
+		# 	while (( last_lines - lines > 1 )); do
+		# 		# clear the line and move cursor down by one
+		# 		clr_prev_preprompt+='\e[2K\e[1B'
+		# 		(( last_lines-- ))
+		# 	done
 
-			# move cursor into correct position for preprompt update
-			clr_prev_preprompt+="\e[${lines}B"
-		# create more space for preprompt if new preprompt has more lines than last
-		elif (( last_lines < lines )); then
-			# move cursor using newlines because ansi cursor movement can't push the cursor beyond the last line
-			printf $'\n'%.0s {1..$(( lines - last_lines ))}
-		fi
+		# 	# move cursor into correct position for preprompt update
+		# 	clr_prev_preprompt+="\e[${lines}B"
+		# # create more space for preprompt if new preprompt has more lines than last
+		# elif (( last_lines < lines )); then
+		# 	# move cursor using newlines because ansi cursor movement can't push the cursor beyond the last line
+		# 	printf $'\n'%.0s {1..$(( lines - last_lines ))}
+		# fi
 
-		# disable clearing of line if last char of preprompt is last column of terminal
-		local clr='\e[K'
-		(( COLUMNS * lines == preprompt_length )) && clr=
+		# # disable clearing of line if last char of preprompt is last column of terminal
+		# local clr='\e[K'
+		# (( COLUMNS * lines == preprompt_length )) && clr=
 
-		# modify previous preprompt
-		print -Pn "${clr_prev_preprompt}\e[${lines}A\e[${COLUMNS}D${preprompt}${clr}\n"
+		# # modify previous preprompt
+		# print -Pn "${clr_prev_preprompt}\e[${lines}A\e[${COLUMNS}D${preprompt}${clr}\n"
 
-		if [[ $prompt_subst_status = 'on' ]]; then
-			# re-eanble prompt_subst for expansion on PS1
-			setopt prompt_subst
-		fi
+		# if [[ $prompt_subst_status = 'on' ]]; then
+		# 	# re-eanble prompt_subst for expansion on PS1
+		# 	setopt prompt_subst
+		# fi
 
-		# redraw prompt (also resets cursor position)
+		# # redraw prompt (also resets cursor position)
 		zle && zle .reset-prompt
 
 		setopt no_prompt_subst
@@ -215,30 +214,6 @@ prompt_pure_precmd() {
 
 	# remove the prompt_pure_cmd_timestamp, indicating that precmd has completed
 	unset prompt_pure_cmd_timestamp
-}
-
-prompt_pure_async_git_aliases() {
-	setopt localoptions noshwordsplit
-	local dir=$1
-	local -a gitalias pullalias
-
-	# we enter repo to get local aliases as well.
-	builtin cd -q $dir
-
-	# list all aliases and split on newline.
-	gitalias=(${(@f)"$(command git config --get-regexp "^alias\.")"})
-	for line in $gitalias; do
-		parts=(${(@)=line})           # split line on spaces
-		aliasname=${parts[1]#alias.}  # grab the name (alias.[name])
-		shift parts                   # remove aliasname
-
-		# check alias for pull or fetch (must be exact match).
-		if [[ $parts =~ ^(.*\ )?(pull|fetch)(\ .*)?$ ]]; then
-			pullalias+=($aliasname)
-		fi
-	done
-
-	print -- ${(j:|:)pullalias}  # join on pipe (for use in regex).
 }
 
 # fastest possible way to check if repo is dirty
@@ -301,7 +276,6 @@ prompt_pure_async_tasks() {
 		# reset git preprompt variables, switching working tree
 		unset prompt_pure_git_dirty
 		unset prompt_pure_git_last_dirty_check_timestamp
-		unset prompt_pure_git_fetch_pattern
 		prompt_pure_git_arrows=
 
 		# set the new working tree and prefix with "x" to prevent the creation of a named path by AUTO_NAME_DIRS
@@ -310,13 +284,6 @@ prompt_pure_async_tasks() {
 
 	# only perform tasks inside git working tree
 	[[ -n $working_tree ]] || return
-
-	if [[ -z $prompt_pure_git_fetch_pattern ]]; then
-		# we set the pattern here to avoid redoing the pattern check until the
-		# working three has changed. pull and fetch are always valid patterns.
-		prompt_pure_git_fetch_pattern="pull|fetch"
-		async_job "prompt_pure" prompt_pure_async_git_aliases $working_tree
-	fi
 
 	async_job "prompt_pure" prompt_pure_async_git_arrows $working_tree
 
@@ -351,12 +318,6 @@ prompt_pure_async_callback() {
 	local job=$1 code=$2 output=$3 exec_time=$4
 
 	case $job in
-		prompt_pure_async_git_aliases)
-			if [[ -n $output ]]; then
-				# append custom git aliases to the predefined ones.
-				prompt_pure_git_fetch_pattern+="|$output"
-			fi
-			;;
 		prompt_pure_async_git_dirty)
 			local prev_dirty=$prompt_pure_git_dirty
 			if (( code == 0 )); then
@@ -392,11 +353,11 @@ prompt_pure_setup() {
 	# if output doesn't end with a newline
 	export PROMPT_EOL_MARK=''
 
-	prompt_opts=(subst percent)
+	# prompt_opts=(subst percent)
 
 	# borrowed from promptinit, sets the prompt options in case pure was not
 	# initialized via promptinit.
-	setopt noprompt{bang,cr,percent,subst} "prompt${^prompt_opts[@]}"
+	# setopt noprompt{bang,cr,percent,subst} "prompt${^prompt_opts[@]}"
 
 	zmodload zsh/datetime
 	zmodload zsh/zle
@@ -421,9 +382,9 @@ prompt_pure_setup() {
 	# if the user has not registered a custom zle widget for clear-screen,
 	# override the builtin one so that the preprompt is displayed correctly when
 	# ^L is issued.
-	if [[ $widgets[clear-screen] == 'builtin' ]]; then
-		zle -N clear-screen prompt_pure_clear_screen
-	fi
+	# if [[ $widgets[clear-screen] == 'builtin' ]]; then
+	# 	zle -N clear-screen prompt_pure_clear_screen
+	# fi
 
 	# show username@host if logged in through SSH
 	[[ "$SSH_CONNECTION" != '' ]] && prompt_pure_username=' %F{242}%n@%m%f'
@@ -433,6 +394,9 @@ prompt_pure_setup() {
 
 	# prompt turns red if the previous command didn't exit with 0
 	PROMPT='%(?.%F{magenta}.%F{red})${PURE_PROMPT_SYMBOL:-❯}%f '
+
+	# create prompt
+	prompt_pure_preprompt_render 'precmd'
 }
 
 prompt_pure_setup "$@"
