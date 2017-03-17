@@ -29,7 +29,7 @@ export DFURNES_PROMPT_COMMAND_COUNT=0
 # 165392 => 1d 21h 56m 32s
 # https://github.com/sindresorhus/pretty-time-zsh
 prompt_pure_human_time_to_var() {
-	local human=" " total_seconds=$1 var=$2
+	local human=" [" total_seconds=$1 var=$2
 	local days=$(( total_seconds / 60 / 60 / 24 ))
 	local hours=$(( total_seconds / 60 / 60 % 24 ))
 	local minutes=$(( total_seconds / 60 % 60 ))
@@ -37,7 +37,7 @@ prompt_pure_human_time_to_var() {
 	(( days > 0 )) && human+="${days}d "
 	(( hours > 0 )) && human+="${hours}h "
 	(( minutes > 0 )) && human+="${minutes}m "
-	human+="${seconds}s"
+	human+="${seconds}s]"
 
 	# store human readable time in variable as specified by caller
 	typeset -g "${var}"="${human}"
@@ -123,7 +123,7 @@ prompt_pure_preprompt_render() {
   if [[ "$DFURNES_PROMPT_COMMAND_COUNT" -gt "$FIRST_COMMAND_THRESHOLD" ]]; then
     preprompt+=$'\n'
   fi
-  
+
   # begin with path
   preprompt+="%F{54}%F{cyan}%c%f"
 	# git info
@@ -133,7 +133,7 @@ prompt_pure_preprompt_render() {
 	# username and machine if applicable
 	preprompt+=$prompt_pure_username
 	# execution time
-	preprompt+="%F{yellow}${prompt_pure_cmd_exec_time}%f"
+	preprompt+="%B%F{242}${prompt_pure_cmd_exec_time}%f"
 
 	# make sure prompt_pure_last_preprompt is a global array
 	typeset -g -a prompt_pure_last_preprompt
