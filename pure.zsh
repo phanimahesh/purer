@@ -23,7 +23,8 @@
 # \e[K  => clears everything after the cursor on the current line
 # \e[2K => clear everything on the current line
 
-export DFURNES_PROMPT_COMMAND_COUNT=0
+PURER_PROMPT_COMMAND_COUNT=0
+STATUS_COLOR='cyan'
 
 # turns seconds into human readable time
 # 165392 => 1d 21h 56m 32s
@@ -58,8 +59,16 @@ prompt_pure_clear_screen() {
 	zle -I
 	# clear screen and move cursor to (0, 0)
 	print -n '\e[2J\e[0;0H'
+	# reset command count to zero so we don't start with a blank line
+	PURER_PROMPT_COMMAND_COUNT=0
 	# print preprompt
 	prompt_pure_preprompt_render precmd
+}
+
+# set STATUS_COLOR: cyan for "insert", green for "normal" mode.
+prompt_purer_vim_mode() {
+	STATUS_COLOR="${${KEYMAP/vicmd/green}/(main|viins)/cyan}"
+	prompt_pure_preprompt_render
 }
 
 prompt_pure_set_title() {
@@ -120,12 +129,13 @@ prompt_pure_preprompt_render() {
 
 	# add a newline between commands
   FIRST_COMMAND_THRESHOLD=1
-  if [[ "$DFURNES_PROMPT_COMMAND_COUNT" -gt "$FIRST_COMMAND_THRESHOLD" ]]; then
+  if [[ "$PURER_PROMPT_COMMAND_COUNT" -gt "$FIRST_COMMAND_THRESHOLD" ]]; then
     preprompt+=$'\n'
   fi
 
-  # begin with path
-  preprompt+="%F{54}%F{cyan}%c%f"
+
+  # begin with path, colored by vim-mode
+  preprompt+="%B%F{$STATUS_COLOR}%c%f%b"
 	# git info
 	preprompt+="%F{$git_color}${vcs_info_msg_0_}${prompt_pure_git_dirty}%f"
 	# git pull/push arrows
@@ -134,12 +144,13 @@ prompt_pure_preprompt_render() {
 	preprompt+=$prompt_pure_username
 	# execution time
 	preprompt+="%B%F{242}${prompt_pure_cmd_exec_time}%f"
+	# show indicator if previous command failed
+	preprompt+="%(?.. ⚠️️ )"
+
+	preprompt+=" "
 
 	# make sure prompt_pure_last_preprompt is a global array
 	typeset -g -a prompt_pure_last_preprompt
-
-	# prompt turns red if the previous command didn't exit with 0
-	preprompt+=" %(?.%F{magenta}.%F{red})%f"
 
 	PROMPT="$preprompt"
 
@@ -176,7 +187,7 @@ prompt_pure_precmd() {
 	prompt_pure_async_tasks
 
 	# Increment command counter
-  DFURNES_PROMPT_COMMAND_COUNT=$((DFURNES_PROMPT_COMMAND_COUNT+1))
+  PURER_PROMPT_COMMAND_COUNT=$((PURER_PROMPT_COMMAND_COUNT+1))
 
 	# print the preprompt
 	prompt_pure_preprompt_render "precmd"
@@ -351,18 +362,18 @@ prompt_pure_setup() {
 	# if the user has not registered a custom zle widget for clear-screen,
 	# override the builtin one so that the preprompt is displayed correctly when
 	# ^L is issued.
-	# if [[ $widgets[clear-screen] == 'builtin' ]]; then
-	# 	zle -N clear-screen prompt_pure_clear_screen
-	# fi
+	if [[ $widgets[clear-screen] == 'builtin' ]]; then
+		zle -N clear-screen prompt_pure_clear_screen
+	fi
+
+	# register custom function for vim-mode
+	zle -N zle-keymap-select prompt_purer_vim_mode
 
 	# show username@host if logged in through SSH
 	[[ "$SSH_CONNECTION" != '' ]] && prompt_pure_username=' %F{242}%n@%m%f'
 
 	# show username@host if root, with username in white
 	[[ $UID -eq 0 ]] && prompt_pure_username=' %F{white}%n%f%F{242}@%m%f'
-
-	# prompt turns red if the previous command didn't exit with 0
-	PROMPT='%(?.%F{magenta}.%F{red})${PURE_PROMPT_SYMBOL:-❯}%f '
 
 	# create prompt
 	prompt_pure_preprompt_render 'precmd'
