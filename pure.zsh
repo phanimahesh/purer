@@ -144,56 +144,11 @@ prompt_pure_preprompt_render() {
 	PROMPT="$preprompt"
 
 	# if executing through precmd, do not perform fancy terminal editing
-	if [[ "$1" == "precmd" ]]; then
-		# print -P "\n${preprompt}"
-	else
+	if [[ "$1" != "precmd" ]]; then
 		# only redraw if the expanded preprompt has changed
-		[[ "${prompt_pure_last_preprompt[2]}" != "${(S%%)preprompt}" ]] || return
+		# [[ "${prompt_pure_last_preprompt[2]}" != "${(S%%)preprompt}" ]] || return
 
-		# # calculate length of preprompt and store it locally in preprompt_length
-		# integer preprompt_length lines
-		# prompt_pure_string_length_to_var "${preprompt}" "preprompt_length"
-
-		# # calculate number of preprompt lines for redraw purposes
-		# (( lines = ( preprompt_length - 1 ) / COLUMNS + 1 ))
-
-		# # calculate previous preprompt lines to figure out how the new preprompt should behave
-		# integer last_preprompt_length last_lines
-		# prompt_pure_string_length_to_var "${prompt_pure_last_preprompt[1]}" "last_preprompt_length"
-		# (( last_lines = ( last_preprompt_length - 1 ) / COLUMNS + 1 ))
-
-		# # clr_prev_preprompt erases visual artifacts from previous preprompt
-		# local clr_prev_preprompt
-		# if (( last_lines > lines )); then
-		# 	# move cursor up by last_lines, clear the line and move it down by one line
-		# 	clr_prev_preprompt="\e[${last_lines}A\e[2K\e[1B"
-		# 	while (( last_lines - lines > 1 )); do
-		# 		# clear the line and move cursor down by one
-		# 		clr_prev_preprompt+='\e[2K\e[1B'
-		# 		(( last_lines-- ))
-		# 	done
-
-		# 	# move cursor into correct position for preprompt update
-		# 	clr_prev_preprompt+="\e[${lines}B"
-		# # create more space for preprompt if new preprompt has more lines than last
-		# elif (( last_lines < lines )); then
-		# 	# move cursor using newlines because ansi cursor movement can't push the cursor beyond the last line
-		# 	printf $'\n'%.0s {1..$(( lines - last_lines ))}
-		# fi
-
-		# # disable clearing of line if last char of preprompt is last column of terminal
-		# local clr='\e[K'
-		# (( COLUMNS * lines == preprompt_length )) && clr=
-
-		# # modify previous preprompt
-		# print -Pn "${clr_prev_preprompt}\e[${lines}A\e[${COLUMNS}D${preprompt}${clr}\n"
-
-		# if [[ $prompt_subst_status = 'on' ]]; then
-		# 	# re-eanble prompt_subst for expansion on PS1
-		# 	setopt prompt_subst
-		# fi
-
-		# # redraw prompt (also resets cursor position)
+		# redraw prompt (also resets cursor position)
 		zle && zle .reset-prompt
 
 		setopt no_prompt_subst
