@@ -117,9 +117,9 @@ prompt_pure_preprompt_render() {
 	# construct preprompt
 	local preprompt=""
 
-  DFURNES_PROMPT_COMMAND_COUNT=$((DFURNES_PROMPT_COMMAND_COUNT+1))
-  FIRST_COMMAND_THRESHOLD=2
 
+	# add a newline between commands
+  FIRST_COMMAND_THRESHOLD=1
   if [[ "$DFURNES_PROMPT_COMMAND_COUNT" -gt "$FIRST_COMMAND_THRESHOLD" ]]; then
     preprompt+=$'\n'
   fi
@@ -219,6 +219,9 @@ prompt_pure_precmd() {
 
 	# preform async git dirty check and fetch
 	prompt_pure_async_tasks
+
+	# Increment command counter
+  DFURNES_PROMPT_COMMAND_COUNT=$((DFURNES_PROMPT_COMMAND_COUNT+1))
 
 	# print the preprompt
 	prompt_pure_preprompt_render "precmd"
