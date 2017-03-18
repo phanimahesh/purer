@@ -143,7 +143,7 @@ prompt_pure_preprompt_render() {
 	# username and machine if applicable
 	preprompt+=$prompt_pure_username
 	# execution time
-	preprompt+="%B%F{242}${prompt_pure_cmd_exec_time}%f"
+	preprompt+="%B%F{242}${prompt_pure_cmd_exec_time}%f%b"
 	# show indicator if previous command failed
 	preprompt+="%(?.. ⚠️️ )"
 
