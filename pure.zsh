@@ -24,7 +24,7 @@
 # \e[2K => clear everything on the current line
 
 PURER_PROMPT_COMMAND_COUNT=0
-STATUS_COLOR='cyan'
+STATUS_COLOR='68'
 
 # turns seconds into human readable time
 # 165392 => 1d 21h 56m 32s
@@ -65,9 +65,9 @@ prompt_pure_clear_screen() {
 	prompt_pure_preprompt_render precmd
 }
 
-# set STATUS_COLOR: cyan for "insert", green for "normal" mode.
+# set STATUS_COLOR: greyish-blue for "insert", sea-green for "normal" mode.
 prompt_purer_vim_mode() {
-	STATUS_COLOR="${${KEYMAP/vicmd/green}/(main|viins)/cyan}"
+	STATUS_COLOR="${${KEYMAP/vicmd/36}/(main|viins)/68}"
 	prompt_pure_preprompt_render
 }
 
@@ -125,35 +125,36 @@ prompt_pure_preprompt_render() {
 
 	# construct preprompt
 	local preprompt=""
+	local r_preprompt=""
 
-
-	# add a newline between commands
-  FIRST_COMMAND_THRESHOLD=1
-  if [[ "$PURER_PROMPT_COMMAND_COUNT" -gt "$FIRST_COMMAND_THRESHOLD" ]]; then
-    preprompt+=$'\n'
-  fi
-
-	local symbol_color="%(?.${PURE_PROMPT_SYMBOL_COLOR:-magenta}.red)"
+	local symbol_color="%(?.${PURE_PROMPT_SYMBOL_COLOR:-66}.red)"
 
 	# begin with symbol, colored by previous command exit code
 	preprompt+="%F{$symbol_color}${PURE_PROMPT_SYMBOL:-❯}%f "
-	# directory, colored by vim status
-	preprompt+="%B%F{$STATUS_COLOR}%c%f%b"
-	# git info
-	preprompt+="%F{$git_color}${vcs_info_msg_0_}${prompt_pure_git_dirty}%f"
-	# git pull/push arrows
-	preprompt+="%F{cyan}${prompt_pure_git_arrows}%f"
 	# username and machine if applicable
 	preprompt+=$prompt_pure_username
+	# directory, colored by vim status
+	preprompt+="%F{$STATUS_COLOR}%~%f"
+	# git info
+	r_preprompt+="%F{$git_color}${vcs_info_msg_0_}${prompt_pure_git_dirty}%f"
+	# git pull/push arrows
+	r_preprompt+="%F{cyan}${prompt_pure_git_arrows}%f"
 	# execution time
-	preprompt+="%B%F{242}${prompt_pure_cmd_exec_time}%f%b"
+	r_preprompt+=" %B%F{242}${prompt_pure_cmd_exec_time}%f%b"
+	# Exit status if not 0
+	r_preprompt+=" %(?..%F{red}%? ↵%f)"
 
-	preprompt+=" "
+	if [[ $UID -eq 0 ]]; then
+		preprompt+='%F{red}#%f '
+	else
+		preprompt+='%F{242}$%f '
+	fi
 
 	# make sure prompt_pure_last_preprompt is a global array
 	typeset -g -a prompt_pure_last_preprompt
 
 	PROMPT="$preprompt"
+	RPROMPT="$r_preprompt"
 
 	# if executing through precmd, do not perform fancy terminal editing
 	if [[ "$1" != "precmd" ]]; then
@@ -330,10 +331,6 @@ prompt_pure_async_callback() {
 }
 
 prompt_pure_setup() {
-	# prevent percentage showing up
-	# if output doesn't end with a newline
-	export PROMPT_EOL_MARK=''
-
 	# prompt_opts=(subst percent)
 
 	# borrowed from promptinit, sets the prompt options in case pure was not
@@ -371,10 +368,10 @@ prompt_pure_setup() {
 	zle -N zle-keymap-select prompt_purer_vim_mode
 
 	# show username@host if logged in through SSH
-	[[ "$SSH_CONNECTION" != '' ]] && prompt_pure_username=' %F{242}%n@%m%f'
+	[[ "$SSH_CONNECTION" != '' ]] && prompt_pure_username='%F{magenta}%n@%m%f '
 
 	# show username@host if root, with username in white
-	[[ $UID -eq 0 ]] && prompt_pure_username=' %F{white}%n%f%F{242}@%m%f'
+	[[ $UID -eq 0 ]] && prompt_pure_username='%F{magenta}%n@%m%f '
 
 	# create prompt
 	prompt_pure_preprompt_render 'precmd'
