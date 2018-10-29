@@ -12,7 +12,7 @@ Can be installed with `npm` or [manually](https://github.com/sindresorhus/pure/b
 $ npm install --global purer-prompt
 ```
 
-Initialize the prompt system (if not so already) and choose `pure`:
+Initialize the prompt system (if not so already) and choose `purer`:
 
 ```sh
 # .zshrc
