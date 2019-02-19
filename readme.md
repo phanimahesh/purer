@@ -30,6 +30,11 @@ Purer supports customization using [Pure's environment variables](https://github
 
 Defines the prompt symbol color. The default value is `magenta`; you can use any [colour name](https://wiki.archlinux.org/index.php/Zsh#Colors) or [numeric colour code](https://upload.wikimedia.org/wikipedia/commons/1/15/Xterm_256color_chart.svg) (see `zshzle(1)` section [Character Highlighting](http://zsh.sourceforge.net/Doc/Release/Zsh-Line-Editor.html#Character-Highlighting).)
 
+
+### `PURE_PROMPT_PATH_FORMATTING`
+
+Defines how to display the path. Default value: `%c`. See [Prompt Expansion](http://zsh.sourceforge.net/Doc/Release/Prompt-Expansion.html) for more.
+
 ## License
 
 Purer MIT © [David Furnes](http://dfurnes.com) <br/>
