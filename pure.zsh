@@ -139,14 +139,14 @@ prompt_pure_preprompt_render() {
   fi
 
 	local symbol_color="%(?.${PURE_PROMPT_SYMBOL_COLOR:-magenta}.red)"
-    local path_formatting="%${PURE_PROMPT_PATH_FORMATTING:c}"
+    local path_formatting="${PURE_PROMPT_PATH_FORMATTING:-%c}"
 
 	# show virtual env
 	preprompt+="%(12V.%F{242}%12v%f .)"
 	# begin with symbol, colored by previous command exit code
 	preprompt+="%F{$symbol_color}${PURE_PROMPT_SYMBOL:-❯}%f "
 	# directory, colored by vim status
-	preprompt+="%B%F{$STATUS_COLOR}{$path_formatting}%f%b"
+	preprompt+="%B%F{$STATUS_COLOR}$path_formatting%f%b"
 	# git info
 	preprompt+="%F{$git_color}${vcs_info_msg_0_}${prompt_pure_git_dirty}%f"
 	# git pull/push arrows
