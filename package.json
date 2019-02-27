@@ -1,6 +1,6 @@
 {
   "name": "purer-prompt",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "A pretty one-line ZSH prompt based on Pure.",
   "license": "MIT",
   "repository": "dfurnes/purer",
