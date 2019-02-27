@@ -142,7 +142,7 @@ prompt_pure_preprompt_render() {
 	local path_formatting="${PURE_PROMPT_PATH_FORMATTING:-%c}"
 
 	# show background jobs
-	preprompt+="%(1j.%j.) "
+	preprompt+="%(1j.%F{242}%j %f.)"
 	# show virtual env
 	preprompt+="%(12V.%F{242}%12v%f .)"
 	# begin with symbol, colored by previous command exit code
